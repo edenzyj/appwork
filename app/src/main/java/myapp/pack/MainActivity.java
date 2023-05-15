@@ -4,10 +4,12 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Base64;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -17,10 +19,13 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
@@ -39,10 +44,13 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +63,8 @@ import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 import com.scwang.smartrefresh.layout.api.RefreshLayout;
 import com.scwang.smartrefresh.layout.listener.OnLoadMoreListener;
 import com.scwang.smartrefresh.layout.listener.OnRefreshListener;
+
+import static android.view.View.GONE;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -72,6 +82,8 @@ public class MainActivity extends AppCompatActivity
     private RefreshLayout mRefreshLayout;
     private boolean loadLock = false;
     private boolean refreshLock = false;
+    private LinearLayout mContainer;
+    private Context mContext;
 
     Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
@@ -200,6 +212,7 @@ public class MainActivity extends AppCompatActivity
         newsFileReader.getInstance().loadNewsId(getExternalFilesDir("collection").getPath());
 
         ma.update(null, curCat, mHandler);
+
     }
 
     @Override
@@ -262,7 +275,14 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.nav_share) {
 
+            String str = "myapp";
+            ArrayList uri = new ArrayList();
+            ShareToSCA.shareQQContentUrl(MainActivity.this, uri, str);
+            //thread1.start();
+
         } else if (id == R.id.nav_send) {
+
+            //thread2.start();
 
         }
 
@@ -370,4 +390,59 @@ public class MainActivity extends AppCompatActivity
             }
         }
      }
+
+    private void initDataWeChatMoment(final String strUrl) {
+        Button mBtnWechat = new Button(this);
+        mBtnWechat.setText("分享到微信朋友圈");
+        mBtnWechat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //ShareToSCA.shareWechatMomentsContentUrl(MainActivity.this, MainActivity.this.getResources().getDrawable(R.drawable.myapp));
+            }
+        });
+        mContainer.addView(mBtnWechat);
+    }
+
+    private void initDataQQ() {
+        Button mBtnQQ = new Button(this);
+        mBtnQQ.setText("分享给QQ好友");
+        mBtnQQ.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //ShareToSCA.shareQQContentUrl(MainActivity.this, MainActivity.this.getResources().getDrawable(R.drawable.myapp));
+            }
+        });
+        mContainer.addView(mBtnQQ);
+    }
+
+    private String sharePicture() {
+        int indentify = getResources().getIdentifier("myapp.pack:drawable/myapp",null,null);
+        InputStream is = getResources().openRawResource(indentify);
+        Bitmap bitmap = BitmapFactory.decodeStream(is);
+        //Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.myapp);
+        String str;
+        ByteArrayOutputStream bStream=new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG,100,bStream);
+        byte[]bytes=bStream.toByteArray();
+        str= Base64.encodeToString(bytes,Base64.DEFAULT);
+        return str;
+    }
+
+    Thread thread1= new Thread(new Runnable() {
+        @Override
+        public void run() {
+            String string = sharePicture();
+            ArrayList url = new ArrayList();
+            ShareToSCA.shareQQContentUrl(MainActivity.this, url, string);
+        }
+    });
+
+    Thread thread2= new Thread(new Runnable() {
+        @Override
+        public void run() {
+            String string = sharePicture();
+            ArrayList url = new ArrayList();
+            ShareToSCA.shareWechatMomentsContentUrl(MainActivity.this, url, string);
+        }
+    });
 }
